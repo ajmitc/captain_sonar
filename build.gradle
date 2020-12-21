@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+version = 1.0
+
+repositories{
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes "Manifest-Version": "1.0",
+                "Built-By": "Aaron Mitchell",
+                "Created-By": "Aaron Mitchell",
+                "Class-Path": configurations.compile.collect { it.getName() }.join(' '),
+                "Main-Class": "sonar.Main"
+    }
+}
