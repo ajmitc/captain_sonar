@@ -7,14 +7,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CaptainPanel extends JPanel {
     private static final int XOFFSET = 63;
     private static final int YOFFSET = 85;
-    private static final int NODE_DISTANCE = 26;
+    public static final int NODE_DISTANCE = 26;
+
+    private static final Point CAPTAINS_LOG_START = new Point(475, 153);
+    private static final int MAX_CAPTAINS_LOG_SIZE = 15;
+    private static final int CAPTAINS_LOG_YOFFSET = 15;
+    private static final Font CAPTAINS_LOG_FONT = new Font("Serif", Font.BOLD, 12);
 
     private Model model;
     private View view;
+    private List<String> captainsLog = new ArrayList<>();
 
     private int mx, my;
 
@@ -46,6 +54,8 @@ public class CaptainPanel extends JPanel {
 
         model.getGame().getGamemap().getNodeList().forEach(n -> drawOnMap(g, n));
 
+        drawCaptainsLog(g);
+
         g.setColor(Color.WHITE);
         g.drawString(mx + ", " + my, 50, 50);
     }
@@ -66,6 +76,18 @@ public class CaptainPanel extends JPanel {
         }
     }
 
+    private void drawCaptainsLog(Graphics2D g){
+        Font oldFont = g.getFont();
+        g.setFont(CAPTAINS_LOG_FONT);
+        g.setColor(Color.BLACK);
+        for (int i = 0; i < captainsLog.size(); ++i){
+            int x = CAPTAINS_LOG_START.x;
+            int y = CAPTAINS_LOG_START.y + (CAPTAINS_LOG_YOFFSET * i);
+            g.drawString(captainsLog.get(i), x, y);
+        }
+        g.setFont(oldFont);
+    }
+
     private void drawOnMap(Graphics2D g, String code, int x, int y){
         g.setColor(Color.WHITE);
         g.fillRect(x - 10, y - 10, 20, 20);
@@ -82,6 +104,14 @@ public class CaptainPanel extends JPanel {
         int x = (mx - XOFFSET) / NODE_DISTANCE;
         int y = (my - YOFFSET) / NODE_DISTANCE;
         return model.getGame().getGamemap().get(x, y);
+    }
+
+    public void addCaptainsLog(String text){
+        captainsLog.add(text);
+        if (captainsLog.size() > MAX_CAPTAINS_LOG_SIZE){
+            captainsLog.remove(0);
+        }
+        refresh();
     }
 
     public void refresh(){

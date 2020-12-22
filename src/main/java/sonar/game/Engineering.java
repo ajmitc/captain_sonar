@@ -129,5 +129,9 @@ public class Engineering{
 		public int getChain() {
 			return chain;
 		}
+
+		public String toString(){
+			return "" + this.type;
+		}
 	}
 }

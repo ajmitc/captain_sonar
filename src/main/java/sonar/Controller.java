@@ -188,6 +188,7 @@ public class Controller {
 					MapNode selected = view.getGamePanel().getCaptainPanel().getMapNodeAt(e.getX(), e.getY());
 					if (selected.getMines().contains(model.getGame().getPlayerSub())){
 						// Trigger mine
+						view.getGamePanel().getCaptainPanel().addCaptainsLog("TRIGGER MINE AT " + selected);
 						handleTriggerMine(selected, model.getGame().getPlayerSub());
 					}
 					else {
@@ -195,6 +196,7 @@ public class Controller {
 						for (Direction direction : neighbors.keySet()) {
 							MapNode neighbor = neighbors.get(direction);
 							if (neighbor == selected) {
+								view.getGamePanel().getCaptainPanel().addCaptainsLog("MOVE " + direction);
 								handleCaptainCommandDirection(CaptainCommand.getDirectionCommand(direction), model.getGame().getPlayerSub());
 								break;
 							}
@@ -222,6 +224,7 @@ public class Controller {
 						subComponent.setDamaged(true);
 						view.refresh();
 						playerDamagedComponent = true;
+						view.getGamePanel().getCaptainPanel().addCaptainsLog("DAMAGE COMPONENT " + subComponent);
 						handleComponentDamaged(subComponent, model.getGame().getPlayerSub());
 					}
                 }
@@ -247,15 +250,25 @@ public class Controller {
 								case TORPEDO -> command = CaptainCommand.getLaunchTorpedoCommand();
 								case SCENARIO -> command = CaptainCommand.getCustomScenarioCommand();
 							}
+							view.getGamePanel().getCaptainPanel().addCaptainsLog("ACTIVATE " + clickedSystem);
 							handleCaptainCommand(command, model.getGame().getPlayerSub());
 						}
 						else if (!playerChargedSystem){
+							view.getGamePanel().getCaptainPanel().addCaptainsLog("CHARGE " + clickedSystem);
 							model.getGame().getPlayerSub().getSystems().charge(clickedSystem);
 							playerChargedSystem = true;
 						}
 					}
 					run();
 				}
+			}
+		});
+
+		this.view.getGamePanel().getRadioOperatorPanel().addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				super.mouseClicked(e);
+				view.getGamePanel().getRadioOperatorPanel().setDragLocation(e.getX(), e.getY());
 			}
 		});
 	}
@@ -311,7 +324,13 @@ public class Controller {
 							playerChargedSystem = false;
 							playerDamagedComponent = false;
 							view.getGamePanel().getCaptainCommandPanel().getBtnEndTurn().setEnabled(false);
-							model.getGame().setGamePhaseStep(GamePhaseStep.PLAYER_TURN_COMMANDS);
+							if (model.getGame().getPlayerSub().getSurfacedSkipTurns() > 0){
+								logger.info("Player Sub Surfaced for " + model.getGame().getPlayerSub().getSurfacedSkipTurns() + " more turns");
+								model.getGame().getPlayerSub().decSurfacedSkipTurns();
+								model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
+							}
+							else
+								model.getGame().setGamePhaseStep(GamePhaseStep.PLAYER_TURN_COMMANDS);
 							break;
 						case PLAYER_TURN_COMMANDS:
 							if (playerEndTurn) {
@@ -335,6 +354,20 @@ public class Controller {
 					switch (model.getGame().getGamePhaseStep()) {
 						case START_PHASE:
 							logger.info("Starting AI Turn Phase");
+							if (model.getGame().getEnemySub().getSurfacedSkipTurns() > 0){
+								logger.info("AI Sub Surfaced for " + model.getGame().getEnemySub().getSurfacedSkipTurns() + " more turns");
+								model.getGame().getEnemySub().decSurfacedSkipTurns();
+								model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
+							}
+							else {
+								model.getGame().setGamePhaseStep(GamePhaseStep.AI_TURN_GET_COMMANDS);
+							}
+							break;
+						case AI_TURN_GET_COMMANDS:
+							List<CaptainCommand> commands = opponentAI.getCaptainCommands();
+							for (CaptainCommand command: commands){
+								handleCaptainCommand(command, opponentAI.getSubmarine());
+							}
 							model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
 							break;
 						case END_PHASE:
@@ -364,17 +397,29 @@ public class Controller {
 		else if (command.isSurface()){
 			// Captain announces current Sector
 			int sector = model.getGame().getGamemap().getSector(submarine.getCurrentLocation().getPoint());
-			logger.info("You announce that you are in sector " + sector);
-			opponentAI.setLastKnownPlayerSurfacingSector(sector);
+
+			submarine.setSurfacedSkipTurns(3);
 
 			// Engineer erases all Breakdowns
 			repairAllSubComponents(submarine);
 
-			// Enemy team takes 3 turns (unless shortened by their own Surface)
-			List<CaptainCommand> commands = opponentAI.getPlayerSurfacedMovements();
-			for (CaptainCommand command1: commands){
-				handleCaptainCommand(command1, model.getGame().getEnemySub());
+			if (submarine == model.getGame().getPlayerSub()) {
+				logger.info("You announce that you are in sector " + sector);
+				opponentAI.setLastKnownPlayerSurfacingSector(sector);
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("SURFACE IN SECTOR " + sector);
+
+				// Enemy team takes 3 turns (unless shortened by their own Surface)
+				List<CaptainCommand> commands = opponentAI.getPlayerSurfacedMovements();
+				for (CaptainCommand command1: commands){
+					handleCaptainCommand(command1, model.getGame().getEnemySub());
+				}
 			}
+			else {
+				logger.info("Enemy sub has surfaced in sector " + sector);
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("ENEMY SURFACED IN SECTOR " + sector);
+				// TODO Player gets to take 3 turns
+			}
+
 
 			// Captain erases his route, keeping only current position and position of his Mines
 			MapNode current = submarine.getCurrentLocation();
@@ -460,7 +505,14 @@ public class Controller {
 		dest.getVisitedFrom().put(submarine, current);
 		dest.getVisitedBy().add(submarine);
 		submarine.setCurrentLocation(dest);
-		playerMoved = (model.getGame().getPlayerSub() == submarine);
+		if (model.getGame().getPlayerSub() == submarine) {
+			playerMoved = true;
+			model.getGame().getEnemySub().getEnemySubMovements().add(command.getDirection());
+		}
+		else {
+			view.getGamePanel().getCaptainPanel().addCaptainsLog("[ENEMY] MOVE " + command.getDirection());
+			model.getGame().getPlayerSub().getEnemySubMovements().add(command.getDirection());
+		}
 	}
 
 	private void handleDropMine(CaptainCommand command, Submarine submarine){
@@ -476,7 +528,7 @@ public class Controller {
 
 		// Drop mine 1 node away (not on path)
         if (submarine == model.getGame().getPlayerSub()){
-        	// TODO Let player select adjacent node to place mine
+        	// Let player select adjacent node to place mine
 			model.getGame().setGamePhaseStep(GamePhaseStep.PLAYER_TURN_DROP_MINE);
 			return;
 		}

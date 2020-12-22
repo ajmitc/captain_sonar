@@ -13,6 +13,8 @@ import java.util.Map;
 public class EngineerPanel extends JPanel {
     private static final int SUB_COMP_WIDTH  = 30;
     private static final int SUB_COMP_HEIGHT = 30;
+    private static final Stroke DAMAGE_STROKE = new BasicStroke(2.f);
+
     private Model model;
     private View view;
     private Image engineerImage;
@@ -76,6 +78,18 @@ public class EngineerPanel extends JPanel {
         Graphics2D g = (Graphics2D) graphics;
 
         g.drawImage(engineerImage, 0, 0, null);
+
+        Stroke oldStroke = g.getStroke();
+        g.setColor(Color.RED);
+        g.setStroke(DAMAGE_STROKE);
+        for (int id = 1; id <= 24; ++id){
+            if (model.getGame().getPlayerSub().getEngineering().getSubComponent(id).isDamaged()) {
+                Rectangle r = subComponentRectangleMap.get(id);
+                g.drawLine(r.x, r.y, r.x + r.width, r.y + r.height);
+                g.drawLine(r.x + r.width, r.y, r.x, r.y + r.height);
+            }
+        }
+        g.setStroke(oldStroke);
 
         g.setColor(Color.WHITE);
         g.drawString(mx + ", " + my, 50, 50);

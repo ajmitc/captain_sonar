@@ -22,9 +22,10 @@ public abstract class OpponentAI {
     public OpponentAI(Model model, View view, Submarine submarine){
         this.model = model;
         this.view = view;
+        this.submarine = submarine;
     }
 
-    public abstract CaptainCommand getCaptainCommand();
+    public abstract List<CaptainCommand> getCaptainCommands();
 
     public abstract System getSystemToCharge();
 
@@ -121,5 +122,9 @@ public abstract class OpponentAI {
 
     public void setLastKnownPlayerSurfacingSector(Integer lastKnownPlayerSurfacingSector) {
         this.lastKnownPlayerSurfacingSector = lastKnownPlayerSurfacingSector;
+    }
+
+    public Submarine getSubmarine() {
+        return submarine;
     }
 }

@@ -10,27 +10,21 @@ import sonar.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class NormalOpponent extends EasyOpponent{
 
     public NormalOpponent(Model model, View view, Submarine submarine){
         super(model, view, submarine);
+        logger = Logger.getLogger(EasyOpponent.class.getName());
     }
 
     @Override
-    public CaptainCommand getCaptainCommand() {
-        // Determine valid directions
-        List<Direction> options = new ArrayList<>();
-        for (Direction dir : Direction.values()) {
-            MapNode node = model.getGame().getGamemap().getInDir(dir, submarine.getCurrentLocation().getPoint());
-            if (node != null && !node.getVisitedBy().contains(submarine) && !node.isIsland())
-                options.add(dir);
-            if (options.isEmpty())
-                return CaptainCommand.getSurfaceCommand();
-        }
+    public List<CaptainCommand> getCaptainCommands() {
+        return super.getCaptainCommands();
         // TODO Choose best direction based on possible player locations
-		List<Integer> quadrantLocations = getMostProbableQuadrantPlayerLocation();
-		return CaptainCommand.getDirectionCommand(getDirectionTowardPlayerLocations(quadrantLocations));
+		//List<Integer> quadrantLocations = getMostProbableQuadrantPlayerLocation();
+		//return CaptainCommand.getDirectionCommand(getDirectionTowardPlayerLocations(quadrantLocations));
     }
 
     @Override

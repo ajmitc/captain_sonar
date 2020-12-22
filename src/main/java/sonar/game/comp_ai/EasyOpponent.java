@@ -9,27 +9,32 @@ import sonar.util.Util;
 import sonar.view.View;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class EasyOpponent extends OpponentAI{
 
     public EasyOpponent(Model model, View view, Submarine submarine){
         super(model, view, submarine);
+        logger = Logger.getLogger(EasyOpponent.class.getName());
     }
 
     @Override
-    public CaptainCommand getCaptainCommand() {
+    public List<CaptainCommand> getCaptainCommands() {
+        List<CaptainCommand> commands = new ArrayList<>();
         // Determine valid directions
         List<Direction> options = new ArrayList<>();
         for (Direction dir : Direction.values()) {
             MapNode node = model.getGame().getGamemap().getInDir(dir, submarine.getCurrentLocation().getPoint());
             if (node != null && !node.getVisitedBy().contains(submarine) && !node.isIsland())
                 options.add(dir);
-            if (options.isEmpty())
-                return CaptainCommand.getSurfaceCommand();
         }
+        if (options.isEmpty())
+            return Collections.singletonList(CaptainCommand.getSurfaceCommand());
         Direction choice = options.get(Util.getRandomInt(0, options.size()));
-        return CaptainCommand.getDirectionCommand(choice);
+        commands.add(CaptainCommand.getDirectionCommand(choice));
+        return commands;
     }
 
     @Override

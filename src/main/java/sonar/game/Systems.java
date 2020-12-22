@@ -39,6 +39,20 @@ public class Systems{
 			systems.get(what).setCharges(0);
 	}
 
+	public int getChargeLevel(System what){
+		if (systems.containsKey(what)){
+			return systems.get(what).getCharges();
+		}
+		return 0;
+	}
+
+	public int getMaxChargeLevel(System what){
+		if (systems.containsKey(what)){
+			return systems.get(what).getMaxCharges();
+		}
+		return 0;
+	}
+
 	private static class SystemTracker{
 			private int charges = 0;
 			private int maxCharges = 3;
