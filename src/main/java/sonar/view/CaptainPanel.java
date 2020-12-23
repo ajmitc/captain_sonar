@@ -11,9 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CaptainPanel extends JPanel {
-    private static final int XOFFSET = 63;
-    private static final int YOFFSET = 85;
+    public static final int XOFFSET = 63;
+    public static final int YOFFSET = 85;
     public static final int NODE_DISTANCE = 26;
+    private static final Stroke PATH_STROKE = new BasicStroke(2.f);
 
     private static final Point CAPTAINS_LOG_START = new Point(475, 153);
     private static final int MAX_CAPTAINS_LOG_SIZE = 15;
@@ -52,6 +53,7 @@ public class CaptainPanel extends JPanel {
         Point p = getScreenLocation(currentLocation);
         drawOnMap(g, "C", p.x, p.y);
 
+        g.setStroke(PATH_STROKE);
         model.getGame().getGamemap().getNodeList().forEach(n -> drawOnMap(g, n));
 
         drawCaptainsLog(g);

@@ -157,7 +157,7 @@ public class GameMap {
 		int totalSectorRows = totalRows / 5;
 		int sectorRow = coord.y / 5;
 		int sectorCol = coord.x / 5;
-		return sectorRow * totalSectorRows + sectorCol;
+		return (sectorRow * totalSectorRows) + sectorCol + 1;
 	}
 
 
@@ -171,9 +171,14 @@ public class GameMap {
 		return startCol <= coord.x && coord.x < stopCol && startRow <= coord.y && coord.y < stopRow;
 	}
 
-
 	public List<MapNode> getNodesWithMines(Submarine submarine) {
 		return getNodeList().stream().filter(n -> n.getMines().contains(submarine)).collect(Collectors.toList());
+	}
+
+	public int getOrthogonalDistanceBetween(MapNode node1, MapNode node2){
+		int dx = Math.abs(node1.getX() - node2.getX());
+		int dy = Math.abs(node1.getY() - node2.getY());
+		return dx + dy;
 	}
 
 	public Image getMapImage() {

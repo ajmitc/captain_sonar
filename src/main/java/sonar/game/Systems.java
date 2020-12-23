@@ -4,9 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Systems{
-    /*
-	TRIGGER_MINE = "Trigger Mine"
-     */
     private Map<System, SystemTracker> systems = new HashMap<>();
     
 	public Systems(){
@@ -16,6 +13,8 @@ public class Systems{
 		systems.put(System.SILENCE, new SystemTracker(6));
 		systems.put(System.DRONE, new SystemTracker(4));
 		systems.put(System.SCENARIO, new SystemTracker(4)); // or 6
+
+		systems.get(System.DRONE).setCharges(3);
 	}
         
         

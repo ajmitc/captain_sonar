@@ -43,6 +43,10 @@ public abstract class OpponentAI {
 
     public abstract MapNode getTriggerMineLocation();
 
+    public abstract MapNode getTorpedoTargetLocation();
+
+    public abstract SonarReport getSonarReport();
+
     public List<Integer> getMostProbableQuadrantPlayerLocation(){
         List<Integer> quadrant_locations = new ArrayList<>();
         // TODO implement this
