@@ -76,10 +76,10 @@ public class FirstMatePanel extends JPanel {
         systemRectangleMap.put(System.SONAR, new Rectangle(295, 332, SYSTEM_RECT_WIDTH, SYSTEM_RECT_HEIGHT));
         systemRectangleMap.put(System.TORPEDO, new Rectangle(104, 330, SYSTEM_RECT_WIDTH, SYSTEM_RECT_HEIGHT));
 
-        damageRectangles.add(new Rectangle(448, 67, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
-        damageRectangles.add(new Rectangle(486, 67, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
-        damageRectangles.add(new Rectangle(525, 67, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
-        damageRectangles.add(new Rectangle(566, 67, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
+        damageRectangles.add(new Rectangle(448, 65, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
+        damageRectangles.add(new Rectangle(486, 65, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
+        damageRectangles.add(new Rectangle(525, 65, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
+        damageRectangles.add(new Rectangle(566, 65, DAMAGE_RECT_WIDTH, DAMAGE_RECT_HEIGHT));
 
         addMouseMotionListener(new MouseAdapter() {
             @Override
@@ -94,8 +94,10 @@ public class FirstMatePanel extends JPanel {
 
     @Override
     public void paintComponent(Graphics graphics){
+        super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics;
 
+        g.fillRect(0, 0, getWidth(), getHeight());
         g.drawImage(firstMateImage, 0, 0, null);
 
         g.setColor(Color.BLACK);

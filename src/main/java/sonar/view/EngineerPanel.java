@@ -75,8 +75,10 @@ public class EngineerPanel extends JPanel {
 
     @Override
     public void paintComponent(Graphics graphics){
+        super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics;
 
+        g.fillRect(0, 0, getWidth(), getHeight());
         g.drawImage(engineerImage, 0, 0, null);
 
         Stroke oldStroke = g.getStroke();

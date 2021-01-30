@@ -2,10 +2,7 @@ package sonar;
 
 import sonar.game.*;
 import sonar.game.System;
-import sonar.game.comp_ai.EasyOpponent;
-import sonar.game.comp_ai.NormalOpponent;
-import sonar.game.comp_ai.OpponentAI;
-import sonar.game.comp_ai.SonarReport;
+import sonar.game.comp_ai.*;
 import sonar.view.View;
 
 import javax.swing.*;
@@ -44,7 +41,24 @@ public class Controller {
                 model.setGame(new Game());
                 model.getGame().setPlayerSub(new Submarine());
                 model.getGame().setEnemySub(new Submarine());
-                view.showGame();
+				// Ask user to select difficulty
+                String diffStr = (String)
+						JOptionPane.showInputDialog(
+								view.getFrame(),
+								"Select AI Difficulty",
+								"AI Difficulty",
+								JOptionPane.QUESTION_MESSAGE,
+								null,
+								new String[]{"Easy", "Normal", "Hard"},
+								"Normal");
+                if (diffStr.equals("Easy")){
+                	model.getGame().setDifficulty(GameDifficulty.EASY);
+				}
+                else if (diffStr.equals("Normal"))
+                	model.getGame().setDifficulty(GameDifficulty.NORMAL);
+                else if (diffStr.equals("Hard"))
+					model.getGame().setDifficulty(GameDifficulty.HARD);
+				view.showGame();
                 view.refresh();
                 run();
             }
@@ -101,6 +115,25 @@ public class Controller {
 			public void actionPerformed(ActionEvent e) {
 				CaptainCommand command = CaptainCommand.getSilenceCommand();
 				handleCaptainCommand(command, model.getGame().getPlayerSub());
+				run();
+			}
+		});
+
+		this.view.getGamePanel().getCaptainCommandPanel().getBtnUndoMove().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("UNDO MOVE " + playerLastMoveDirection);
+				Submarine playerSub = model.getGame().getPlayerSub();
+				MapNode current = playerSub.getCurrentLocation();
+				MapNode lastNode = model.getGame().getGamemap().getInDir(playerLastMoveDirection.getOpposite(), current.getPoint());
+
+				// Move sub to new location
+				current.getVisitedFrom().remove(playerSub);
+				current.getVisitedBy().remove(playerSub);
+				playerSub.setCurrentLocation(lastNode);
+				playerMoved = false;
+				playerLastMoveDirection = null;
+				model.getGame().getEnemySub().getEnemySubMovements().remove(model.getGame().getEnemySub().getEnemySubMovements().size() - 1);
 				run();
 			}
 		});
@@ -167,11 +200,31 @@ public class Controller {
 			}
 		});
 
+		this.view.getGamePanel().getCaptainCommandPanel().getCkbShowEnemySub().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				model.setProperty("radiooperator.enemy.show", view.getGamePanel().getCaptainCommandPanel().getCkbShowEnemySub().isSelected()? "true": "false");
+				run();
+			}
+		});
+
 		this.view.getGamePanel().getCaptainPanel().addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				super.mouseClicked(e);
-				if (model.getGame().getGamePhaseStep() == GamePhaseStep.PLAYER_TURN_DROP_MINE){
+				if (model.getGame().getGamePhaseStep() == GamePhaseStep.SETUP_PLACE_PLAYER_SUB){
+					MapNode selected = view.getGamePanel().getCaptainPanel().getMapNodeAt(e.getX(), e.getY());
+					if (selected == null)
+						return;
+					if (selected.isIsland()){
+						logger.warning("Cannot place submarine on island");
+						JOptionPane.showMessageDialog(view.getFrame(), "Cannot place submarine on an island");
+						return;
+					}
+					model.getGame().getPlayerSub().setCurrentLocation(selected);
+					selected.getVisitedBy().add(model.getGame().getPlayerSub());
+				}
+				else if (model.getGame().getGamePhaseStep() == GamePhaseStep.PLAYER_TURN_DROP_MINE){
 					MapNode selected = view.getGamePanel().getCaptainPanel().getMapNodeAt(e.getX(), e.getY());
 					if (selected == null)
 					    return;
@@ -205,7 +258,9 @@ public class Controller {
 						JOptionPane.showMessageDialog(view.getFrame(), "Cannot target location more than 4 orthogonal spaces away");
 						return;
 					}
+					view.getGamePanel().getCaptainPanel().addCaptainsLog("FIRE TORPEDO AT " + selected);
 					handleTorpedoImpact(selected, model.getGame().getPlayerSub());
+					model.getGame().getPlayerSub().getSystems().reset(System.TORPEDO);
 					model.getGame().setGamePhaseStep(GamePhaseStep.PLAYER_TURN_COMMANDS);
 				}
 				else if (model.getGame().getGamePhaseStep() == GamePhaseStep.PLAYER_TURN_COMMANDS){
@@ -322,31 +377,32 @@ public class Controller {
 							model.getGame().setPlayerSub(playerSub);
 							model.getGame().setEnemySub(enemySub);
 
-							MapNode startLoc = model.getGame().getGamemap().getRandomLocation();
-							startLoc.getVisitedBy().add(model.getGame().getPlayerSub());
-							model.getGame().getPlayerSub().setCurrentLocation(startLoc);
-							logger.info("Placed Player sub on map at " + startLoc);
+							switch (model.getGame().getDifficulty()){
+								case EASY -> opponentAI = new EasyOpponent(model, view, enemySub);
+								case NORMAL -> opponentAI = new NormalOpponent(model, view, enemySub);
+								case HARD -> opponentAI = new HardOpponent(model, view, enemySub);
+							}
 
-							startLoc = model.getGame().getGamemap().getRandomLocation();
+							model.getGame().setGamePhaseStep(GamePhaseStep.SETUP_PLACE_PLAYER_SUB);
+							break;
+						case SETUP_PLACE_PLAYER_SUB: {
+							if (model.getGame().getPlayerSub().getCurrentLocation() == null) {
+								JOptionPane.showMessageDialog(view.getFrame(), "Place your submarine");
+								return;
+							}
+							model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
+							break;
+						}
+						case END_PHASE: {
+							MapNode startLoc = model.getGame().getGamemap().getRandomLocation();
 							startLoc.getVisitedBy().add(model.getGame().getEnemySub());
 							model.getGame().getEnemySub().setCurrentLocation(startLoc);
 							logger.info("Placed AI sub on map at " + startLoc);
 
-							//model.getGame().getGamemap().printMap(model.getGame().getPlayerSub().getCurrentLocation());
-							model.getGame().setDifficulty(GameDifficulty.EASY);
-
-							switch (model.getGame().getDifficulty()){
-								case EASY -> opponentAI = new EasyOpponent(model, view, enemySub);
-								case NORMAL -> opponentAI = new NormalOpponent(model, view, enemySub);
-								case HARD -> opponentAI = new NormalOpponent(model, view, enemySub);
-							}
-
-							model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
-							break;
-						case END_PHASE:
 							logger.info("Starting game...");
-						    model.getGame().setGamePhase(GamePhase.PLAYER_TURN);
+							model.getGame().setGamePhase(GamePhase.PLAYER_TURN);
 							break;
+						}
 					}
 					break;
 				case PLAYER_TURN:
@@ -359,6 +415,7 @@ public class Controller {
 							playerDamagedComponent = false;
 							playerLastMoveDirection = null;
 							view.getGamePanel().getCaptainCommandPanel().getBtnEndTurn().setEnabled(false);
+							view.getGamePanel().getCaptainCommandPanel().getBtnUndoMove().setEnabled(false);
 							if (model.getGame().getPlayerSub().getSurfacedSkipTurns() > 0){
 								logger.info("Player Sub Surfaced for " + model.getGame().getPlayerSub().getSurfacedSkipTurns() + " more turns");
 								model.getGame().getPlayerSub().decSurfacedSkipTurns();
@@ -373,6 +430,12 @@ public class Controller {
 								model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
 								continue;
 							}
+
+							if (playerMoved && !playerDamagedComponent && !playerChargedSystem)
+								view.getGamePanel().getCaptainCommandPanel().getBtnUndoMove().setEnabled(true);
+							else
+								view.getGamePanel().getCaptainCommandPanel().getBtnUndoMove().setEnabled(false);
+
 							if (playerMoved && playerDamagedComponent && playerChargedSystem){
 								view.getGamePanel().getCaptainCommandPanel().getBtnEndTurn().setEnabled(true);
 							}
@@ -406,6 +469,18 @@ public class Controller {
 							for (CaptainCommand command: commands){
 								handleCaptainCommand(command, opponentAI.getSubmarine());
 							}
+							model.getGame().setGamePhaseStep(GamePhaseStep.AI_TURN_CHARGE_SYSTEM);
+							break;
+						case AI_TURN_CHARGE_SYSTEM:
+							System system = opponentAI.getSystemToCharge();
+							if (system != null)
+								opponentAI.getSubmarine().getSystems().charge(system);
+							model.getGame().setGamePhaseStep(GamePhaseStep.AI_TURN_DAMAGE_SYSTEM);
+							break;
+						case AI_TURN_DAMAGE_SYSTEM:
+							Engineering.SubComponent subComponent = opponentAI.getSubComponentToDamage();
+							if (subComponent != null)
+								opponentAI.getSubmarine().getEngineering().damage(subComponent);
 							model.getGame().setGamePhaseStep(GamePhaseStep.END_PHASE);
 							break;
 						case END_PHASE:
@@ -648,15 +723,18 @@ public class Controller {
 				model.getGame().getEnemySub().incSubDamage();
 				model.getGame().getEnemySub().incSubDamage();
 				logger.info("Direct hit on enemy sub!");
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("DIRECT HIT!");
 				shout("DIRECT HIT!", model.getGame().getEnemySub());
 			} else if (model.getGame().getGamemap().getNeighbors(mapNode.getPoint()).contains(enemyLocation)) {
 				// Indirect hit - 1 damage
 				model.getGame().getEnemySub().incSubDamage();
 				logger.info("Indirect hit on enemy sub");
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("INDIRECT HIT!");
 				shout("INDIRECT HIT!", model.getGame().getEnemySub());
 			} else {
 				logger.info("ALL CLEAR");
-				JOptionPane.showMessageDialog(view.getFrame(), "[ENEMY CAPTAIN] ALL CLEAR!");
+				view.getGamePanel().getCaptainPanel().addCaptainsLog("ALL CLEAR!");
+				//JOptionPane.showMessageDialog(view.getFrame(), "[ENEMY CAPTAIN] ALL CLEAR!");
 				shout("ALL CLEAR!", model.getGame().getEnemySub());
 			}
 		}

@@ -1,20 +1,23 @@
 package sonar.game.comp_ai;
 
 import sonar.Model;
-import sonar.game.CaptainCommand;
-import sonar.game.Direction;
-import sonar.game.MapNode;
-import sonar.game.Submarine;
+import sonar.game.*;
+import sonar.game.System;
 import sonar.util.Util;
 import sonar.view.View;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class EasyOpponent extends OpponentAI{
+    private Direction lastDirection;
+
+    // If < 0 than opponent NOT in this sector, if > 0, opponent IS in this sector, 0 == unknown
+    private int droneSectorResponse;
 
     public EasyOpponent(Model model, View view, Submarine submarine){
         super(model, view, submarine);
@@ -24,6 +27,16 @@ public class EasyOpponent extends OpponentAI{
     @Override
     public List<CaptainCommand> getCaptainCommands() {
         List<CaptainCommand> commands = new ArrayList<>();
+
+        // Attempt to activate a system
+        List<System> chargedSystems = submarine.getSystems().getChargedSystems();
+        if (!chargedSystems.isEmpty()){
+            System system = chargedSystems.get(Util.getRandomInt(0, chargedSystems.size()));
+            CaptainCommand activateCommand = CaptainCommand.getActivateCommand(system);
+            if (activateCommand != null)
+                commands.add(activateCommand);
+        }
+
         // Determine valid directions
         List<Direction> options = new ArrayList<>();
         for (Direction dir : Direction.values()) {
@@ -31,20 +44,37 @@ public class EasyOpponent extends OpponentAI{
             if (node != null && !node.getVisitedBy().contains(submarine) && !node.isIsland())
                 options.add(dir);
         }
-        if (options.isEmpty())
+        if (options.isEmpty()) {
+            lastDirection = null;
             return Collections.singletonList(CaptainCommand.getSurfaceCommand());
+        }
         Direction choice = options.get(Util.getRandomInt(0, options.size()));
         commands.add(CaptainCommand.getDirectionCommand(choice));
+        lastDirection = choice;
         return commands;
     }
 
     @Override
     public System getSystemToCharge() {
-        return null;
+        List<System> options = new ArrayList<>();
+        for (System system: submarine.getSystems().getUnchargedSystems()){
+            options.add(system);
+        }
+        if (options.isEmpty())
+            return null;
+        return options.get(Util.getRandomInt(0, options.size()));
     }
 
     @Override
-    public System getSystemToActivate() {
+    public Engineering.SubComponent getSubComponentToDamage() {
+        if (lastDirection != null){
+            // Get undamaged components
+            List<Engineering.SubComponent> subComponents =
+                    submarine.getEngineering().getSubComponents(lastDirection).stream()
+                            .filter(sc -> !sc.isDamaged())
+                            .collect(Collectors.toList());
+            return subComponents.get(Util.getRandomInt(0, subComponents.size()));
+        }
         return null;
     }
 
@@ -73,14 +103,13 @@ public class EasyOpponent extends OpponentAI{
 
     @Override
     public MapNode getDropMineLocation() {
-        MapNode current = submarine.getCurrentLocation();
-        List<MapNode> neighbors = model.getGame().getGamemap().getNeighbors(current.getPoint());
-        for (MapNode neighbor: neighbors){
-            if (neighbor.getVisitedBy().contains(submarine) || neighbor.isIsland())
-                continue;
-            return neighbor;
-        }
-        return null;
+        List<MapNode> neighbors =
+                model.getGame().getGamemap().getNeighbors(submarine.getCurrentLocation().getPoint()).stream()
+                        .filter(mn -> !mn.isIsland() && !mn.getVisitedBy().contains(submarine))
+                        .collect(Collectors.toList());
+        if (neighbors.isEmpty())
+            return null;
+        return neighbors.get(Util.getRandomInt(0, neighbors.size()));
     }
 
     /**
@@ -89,7 +118,10 @@ public class EasyOpponent extends OpponentAI{
      */
     @Override
     public MapNode getTriggerMineLocation() {
-        return null;
+        List<MapNode> mineLocations = model.getGame().getGamemap().getNodesWithMines(submarine);
+        if (mineLocations.isEmpty())
+            return null;
+        return mineLocations.get(Util.getRandomInt(0, mineLocations.size()));
     }
 
     @Override
@@ -100,11 +132,18 @@ public class EasyOpponent extends OpponentAI{
     @Override
     public void setDroneSectorQueryResponse(int sectorQuery, boolean response) {
         // AI asked if player in sectorQuery, if response == true: yes, otherwise, no
+        droneSectorResponse = sectorQuery * (response? 1: -1);
     }
 
     @Override
     public MapNode getTorpedoTargetLocation() {
-        return null;
+        List<MapNode> targetNodes = model.getGame().getGamemap().getNodesWithinTorpedoRange(submarine.getCurrentLocation());
+        while (true){
+            MapNode target = targetNodes.get(Util.getRandomInt(0, targetNodes.size()));
+            if (model.getGame().getGamemap().getOrthogonalDistanceBetween(submarine.getCurrentLocation(), target) < 2)
+                continue;
+            return target;
+        }
     }
 
     @Override
@@ -117,7 +156,10 @@ public class EasyOpponent extends OpponentAI{
         Integer sector = model.getGame().getGamemap().getSector(model.getGame().getEnemySub().getCurrentLocation().getPoint());
 
         // First choice - True
-        List<String> choices = Arrays.asList("row", "column", "sector");
+        List<String> choices = new ArrayList<>();
+        choices.add("row");
+        choices.add("column");
+        choices.add("sector");
         String choice = choices.get(Util.getRandomInt(0, 3));
         choices.remove(choice);
         if (choice.equals("row"))

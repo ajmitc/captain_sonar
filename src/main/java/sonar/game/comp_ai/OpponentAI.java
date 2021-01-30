@@ -1,10 +1,8 @@
 package sonar.game.comp_ai;
 
 import sonar.Model;
-import sonar.game.CaptainCommand;
-import sonar.game.Direction;
-import sonar.game.MapNode;
-import sonar.game.Submarine;
+import sonar.game.*;
+import sonar.game.System;
 import sonar.view.View;
 
 import java.util.ArrayList;
@@ -29,7 +27,7 @@ public abstract class OpponentAI {
 
     public abstract System getSystemToCharge();
 
-    public abstract System getSystemToActivate();
+    public abstract Engineering.SubComponent getSubComponentToDamage();
 
     public abstract List<CaptainCommand> getSilenceMovements();
 

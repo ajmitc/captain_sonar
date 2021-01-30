@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class NormalOpponent extends EasyOpponent{
+public class HardOpponent extends NormalOpponent{
 
-    public NormalOpponent(Model model, View view, Submarine submarine){
+    public HardOpponent(Model model, View view, Submarine submarine){
         super(model, view, submarine);
         logger = Logger.getLogger(EasyOpponent.class.getName());
     }

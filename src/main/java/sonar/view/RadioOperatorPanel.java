@@ -23,8 +23,10 @@ public class RadioOperatorPanel extends JPanel {
 
     @Override
     public void paintComponent(Graphics graphics){
+        super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics;
 
+        g.fillRect(0, 0, getWidth(), getHeight());
         g.drawImage(model.getGame().getGamemap().getMapImage(), 0, 0, null);
 
         g.setColor(Color.RED);
@@ -47,11 +49,12 @@ public class RadioOperatorPanel extends JPanel {
         }
 
         if (model.getProperty("radiooperator.enemy.show", false)){
-            MapNode currentLocation = model.getGame().getEnemySub().getCurrentLocation();
-            Point p = getScreenLocation(currentLocation);
-            drawOnMap(g, "E", p.x, p.y);
-
             model.getGame().getGamemap().getNodeList().forEach(n -> drawOnMap(g, n));
+            MapNode currentLocation = model.getGame().getEnemySub().getCurrentLocation();
+            if (currentLocation != null) {
+                Point p = getScreenLocation(currentLocation);
+                drawOnMap(g, "E", p.x, p.y);
+            }
         }
     }
 

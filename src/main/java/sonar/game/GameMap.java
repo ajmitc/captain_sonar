@@ -5,10 +5,8 @@ import sonar.view.ImageUtil;
 
 import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -179,6 +177,34 @@ public class GameMap {
 		int dx = Math.abs(node1.getX() - node2.getX());
 		int dy = Math.abs(node1.getY() - node2.getY());
 		return dx + dy;
+	}
+
+	/**
+	 * Get all Nodes within 4 orthogonal nodes from the given point
+	 * @param sub
+	 * @return
+	 */
+	public List<MapNode> getNodesWithinTorpedoRange(MapNode sub){
+		Set<MapNode> nodes = new HashSet<>();
+		// Get immediate neighbors (range == 1)
+		nodes.addAll(getNeighbors(sub.getPoint()).stream().filter(mn -> !mn.isIsland()).collect(Collectors.toList()));
+
+		List<MapNode> recentNeighbors = new ArrayList<>();
+		recentNeighbors.addAll(nodes);
+		for (int i = 2; i <= 4; ++i){
+			Set<MapNode> newNeighbors = new HashSet<>();
+			for (MapNode node: recentNeighbors) {
+				List<MapNode> neighbors =
+						getNeighbors(node.getPoint()).stream()
+								.filter(mn -> !mn.isIsland() && !nodes.contains(mn) && mn != sub)
+								.collect(Collectors.toList());
+				newNeighbors.addAll(neighbors);
+				nodes.addAll(neighbors);
+			}
+			recentNeighbors.clear();
+			recentNeighbors.addAll(newNeighbors);
+		}
+		return new ArrayList(nodes);
 	}
 
 	public Image getMapImage() {

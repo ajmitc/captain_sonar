@@ -19,6 +19,18 @@ public class CaptainCommand {
         this.direction = direction;
     }
 
+    public static CaptainCommand getActivateCommand(System system){
+        switch (system){
+            case TORPEDO: return getLaunchTorpedoCommand();
+            case SILENCE: return getSilenceCommand();
+            case SONAR: return getActivateSonarCommand();
+            case DRONE: return getLaunchDroneCommand();
+            case MINE: return getDropMineCommand();
+            case SCENARIO: return getCustomScenarioCommand();
+        }
+        return null;
+    }
+
     public static CaptainCommand getDirectionCommand(Direction direction){
         CaptainCommand command = new CaptainCommand(direction);
         return command;
@@ -110,5 +122,33 @@ public class CaptainCommand {
 
     public boolean isCustom() {
         return custom;
+    }
+
+    public void setDropMine(boolean dropMine) {
+        this.dropMine = dropMine;
+    }
+
+    public void setTriggerMine(boolean triggerMine) {
+        this.triggerMine = triggerMine;
+    }
+
+    public void setSurface(boolean surface) {
+        this.surface = surface;
+    }
+
+    public void setSilence(boolean silence) {
+        this.silence = silence;
+    }
+
+    public void setTorpedo(boolean torpedo) {
+        this.torpedo = torpedo;
+    }
+
+    public void setSonar(boolean sonar) {
+        this.sonar = sonar;
+    }
+
+    public void setCustom(boolean custom) {
+        this.custom = custom;
     }
 }

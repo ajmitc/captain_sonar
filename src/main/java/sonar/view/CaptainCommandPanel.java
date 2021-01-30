@@ -4,11 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 
 public class CaptainCommandPanel extends JPanel {
-    private JButton btnNorth, btnSouth, btnEast, btnWest, btnSurfaceDive, btnSilence;
+    private JButton btnNorth, btnSouth, btnEast, btnWest, btnSurfaceDive, btnSilence, btnUndoMove;
     private JButton btnDropMine, btnTriggerMine;
     private JButton btnLaunchTorpedo, btnLaunchDrone, btnActivateSonar;
     private JButton btnActivateCustomScenarioSystem;
     private JButton btnEndTurn;
+    private JCheckBox ckbShowEnemySub;
 
     public CaptainCommandPanel(){
         super();
@@ -20,6 +21,7 @@ public class CaptainCommandPanel extends JPanel {
         btnWest          = new JButton("West");
         btnSurfaceDive   = new JButton("Surface");
         btnSilence       = new JButton("Silence");
+        btnUndoMove      = new JButton("Undo Move");
 
         btnDropMine      = new JButton("Drop Mine");
         btnTriggerMine   = new JButton("Trigger Mine");
@@ -29,6 +31,8 @@ public class CaptainCommandPanel extends JPanel {
         btnActivateCustomScenarioSystem = new JButton("Activate Custom");
 
         btnEndTurn       = new JButton("End Turn");
+
+        ckbShowEnemySub  = new JCheckBox("Show Enemy Sub");
 
         btnSilence.setForeground(Color.RED);
         btnLaunchTorpedo.setForeground(Color.RED);
@@ -45,7 +49,8 @@ public class CaptainCommandPanel extends JPanel {
         directionPanel.add(btnEast);
         directionPanel.add(new JLabel(""));
         directionPanel.add(btnSouth);
-        directionPanel.add(new JLabel(""));
+        directionPanel.add(btnUndoMove);
+        //directionPanel.add(new JLabel(""));
 
         JPanel systemPanel = new JPanel(new GridLayout(3, 2));
         systemPanel.add(btnDropMine);
@@ -58,9 +63,17 @@ public class CaptainCommandPanel extends JPanel {
         JPanel endTurnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         endTurnPanel.add(btnEndTurn);
 
+        JPanel optionPanel = new JPanel();
+        optionPanel.setLayout(new BoxLayout(optionPanel, BoxLayout.PAGE_AXIS));
+
+        JPanel showEnemySubPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        showEnemySubPanel.add(ckbShowEnemySub);
+        optionPanel.add(showEnemySubPanel);
+
         add(directionPanel);
         add(systemPanel);
         add(endTurnPanel);
+        add(optionPanel);
     }
 
     public JButton getBtnNorth() {
@@ -85,6 +98,10 @@ public class CaptainCommandPanel extends JPanel {
 
     public JButton getBtnSilence() {
         return btnSilence;
+    }
+
+    public JButton getBtnUndoMove() {
+        return btnUndoMove;
     }
 
     public JButton getBtnDropMine() {
@@ -113,5 +130,9 @@ public class CaptainCommandPanel extends JPanel {
 
     public JButton getBtnEndTurn() {
         return btnEndTurn;
+    }
+
+    public JCheckBox getCkbShowEnemySub() {
+        return ckbShowEnemySub;
     }
 }

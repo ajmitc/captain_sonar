@@ -45,4 +45,8 @@ public class Model {
             return BOOLEAN_VALUES.contains(getProperty(key, "").toLowerCase());
         return def;
     }
+
+    public void setProperty(String key, String value){
+        properties.setProperty(key, value);
+    }
 }

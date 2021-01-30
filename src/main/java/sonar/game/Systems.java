@@ -1,7 +1,9 @@
 package sonar.game;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Systems{
     private Map<System, SystemTracker> systems = new HashMap<>();
@@ -14,10 +16,9 @@ public class Systems{
 		systems.put(System.DRONE, new SystemTracker(4));
 		systems.put(System.SCENARIO, new SystemTracker(4)); // or 6
 
-		systems.get(System.DRONE).setCharges(3);
+		//systems.get(System.SONAR).setCharges(2);
 	}
-        
-        
+
 	public void charge(System what){
 		if (systems.containsKey(what)) {
 			if (systems.get(what).getCharges() < systems.get(what).getMaxCharges()) {
@@ -25,8 +26,7 @@ public class Systems{
 			}
 		}
 	}
-    
-    
+
 	public boolean isCharged(System what) {
 		if (systems.containsKey(what))
 			return systems.get(what).getCharges() == systems.get(what).getMaxCharges();
@@ -50,6 +50,14 @@ public class Systems{
 			return systems.get(what).getMaxCharges();
 		}
 		return 0;
+	}
+
+	public List<System> getUnchargedSystems(){
+		return systems.keySet().stream().filter(system -> systems.get(system).getCharges() < systems.get(system).getMaxCharges()).collect(Collectors.toList());
+	}
+
+	public List<System> getChargedSystems(){
+		return systems.keySet().stream().filter(system -> systems.get(system).getCharges() == systems.get(system).getMaxCharges()).collect(Collectors.toList());
 	}
 
 	private static class SystemTracker{

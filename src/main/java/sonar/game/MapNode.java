@@ -55,7 +55,7 @@ public class MapNode {
 	}
 
 	public String toString(){
-		char cy = (char) ('A' + y);
-		return "" + cy + (x + 1);
+		char cy = (char) ('A' + x);
+		return "" + cy + (y + 1);
 	}
 }

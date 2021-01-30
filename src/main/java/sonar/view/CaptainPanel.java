@@ -45,16 +45,22 @@ public class CaptainPanel extends JPanel {
 
     @Override
     public void paintComponent(Graphics graphics){
+        super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics;
+
+        //g.setColor(Color.WHITE);
+        g.fillRect(0, 0, getWidth(), getHeight());
 
         g.drawImage(model.getGame().getGamemap().getMapImage(), 0, 0, null);
 
-        MapNode currentLocation = model.getGame().getPlayerSub().getCurrentLocation();
-        Point p = getScreenLocation(currentLocation);
-        drawOnMap(g, "C", p.x, p.y);
-
         g.setStroke(PATH_STROKE);
         model.getGame().getGamemap().getNodeList().forEach(n -> drawOnMap(g, n));
+
+        MapNode currentLocation = model.getGame().getPlayerSub().getCurrentLocation();
+        if (currentLocation != null) {
+            Point p = getScreenLocation(currentLocation);
+            drawSubOnMap(g, p.x, p.y);
+        }
 
         drawCaptainsLog(g);
 
@@ -88,6 +94,13 @@ public class CaptainPanel extends JPanel {
             g.drawString(captainsLog.get(i), x, y);
         }
         g.setFont(oldFont);
+    }
+
+    private void drawSubOnMap(Graphics2D g, int x, int y){
+        g.setColor(Color.WHITE);
+        g.fillOval(x - 10, y - 10, 20, 20);
+        g.setColor(Color.BLACK);
+        g.drawString("S", x - 5, y + 5);
     }
 
     private void drawOnMap(Graphics2D g, String code, int x, int y){
